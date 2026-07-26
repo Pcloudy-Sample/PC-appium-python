@@ -29,7 +29,7 @@ This project is a Python-based Appium sample showing how to run Android and iOS 
 Clone the project and install the dependencies:
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Pcloudy-Sample/PC-appium-python
 cd PC-appium-python
 pip install -r requirements.txt
 ```
