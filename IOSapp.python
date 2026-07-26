@@ -1,0 +1,83 @@
+import os
+import time
+from datetime import datetime
+
+from appium import webdriver
+from appium.options.ios import XCUITestOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+
+PCLOUDY_USERNAME = os.getenv("PCLOUDY_USERNAME", "sample_username")
+PCLOUDY_APIKEY = os.getenv("PCLOUDY_APIKEY", "sample_api_key")
+
+
+def build_capabilities():
+    pcloudy_options = {
+        "pCloudy_Username": PCLOUDY_USERNAME,
+        "pCloudy_ApiKey": PCLOUDY_APIKEY,
+        "pCloudy_DeviceFullName": "APPLE_iPhone11Pro_iOS_17.5.1_45645",
+        "pCloudy_WildNet": False,
+        "pCloudy_EnableVideo": False,
+        "pCloudy_EnablePerformanceData": False,
+        "pCloudy_EnableDeviceLogs": False,
+        "appiumVersion": "3.1.1",
+    }
+
+    opts = XCUITestOptions()
+    opts.trust_app = False
+    opts.new_command_timeout = 600
+    opts.launch_timeout = 90000
+    opts.platform_version = "15.0.0"
+    opts.platform_name = "iOS"
+    opts.accept_alerts = True
+    opts.automation_name = "XCUITest"
+    opts.bundle_id = "com.pcloudy.TestmunkDemo"
+    opts.set_capability("appium:pCloudy_ApplicationName", "pCloudy_Appium_Demo-1782572132_Resigned1782583101.ipa")
+    opts.set_capability("pcloudy:options", pcloudy_options)
+    return opts
+
+
+def capture_screenshot(driver, label: str):
+    os.makedirs("screenshots", exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = os.path.join("screenshots", f"ios_{label}_{ts}.png")
+    driver.save_screenshot(path)
+    print(f"Saved screenshot: {path}")
+
+
+def wait_for_click(driver, by, value, timeout=20):
+    return WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, value)))
+
+
+def main():
+    driver = webdriver.Remote(
+        command_executor="https://device.pcloudy.com/appiumcloud/wd/hub",
+        options=build_capabilities(),
+    )
+
+    try:
+        print("Execution started")
+        wait_for_click(driver, By.XPATH, "//XCUIElementTypeApplication[1]/XCUIElementTypeWindow[1]/XCUIElementTypeOther[1]/XCUIElementTypeTextField[1]").send_keys("sample@example.com")
+        capture_screenshot(driver, "email")
+        time.sleep(3)
+
+        wait_for_click(driver, By.XPATH, "//XCUIElementTypeApplication[1]/XCUIElementTypeWindow[1]/XCUIElementTypeOther[1]/XCUIElementTypeSecureTextField[1]").send_keys("sample_password")
+        capture_screenshot(driver, "password")
+        time.sleep(8)
+
+        wait_for_click(driver, By.XPATH, "//XCUIElementTypeApplication[1]/XCUIElementTypeWindow[1]/XCUIElementTypeOther[1]/XCUIElementTypeButton[1]").click()
+        capture_screenshot(driver, "login")
+
+        wait_for_click(driver, By.XPATH, "//XCUIElementTypeButton[@name='Skip']").click()
+        time.sleep(2)
+
+        wait_for_click(driver, By.XPATH, "//*[contains(@name,'SHOW ALERT VIEW')]").click()
+        capture_screenshot(driver, "alert_view")
+    finally:
+        driver.quit()
+
+
+if __name__ == "__main__":
+    main()

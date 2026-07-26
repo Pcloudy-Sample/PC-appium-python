@@ -1,0 +1,76 @@
+import os
+from appium import webdriver
+from appium.options.ios import XCUITestOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+PCLOUDY_USERNAME = os.getenv("PCLOUDY_USERNAME", "sample_username")
+PCLOUDY_APIKEY = os.getenv("PCLOUDY_APIKEY", "sample_api_key")
+
+
+def build_options():
+    pcloudy_options = {
+        "pCloudy_Username": PCLOUDY_USERNAME,
+        "pCloudy_ApiKey": PCLOUDY_APIKEY,
+        "pCloudy_DeviceFullName": "APPLE_iPhone12ProMax_iOS_16.3.1_22ba7",
+        "pCloudy_WildNet": False,
+        "pCloudy_EnableVideo": True,
+        "pCloudy_EnablePerformanceData": False,
+        "pCloudy_EnableDeviceLogs": False,
+        "appiumVersion": "3.1.1",
+    }
+
+    opts = XCUITestOptions()
+    opts.platform_name = "iOS"
+    opts.platform_version = "15.0.0"
+    opts.automation_name = "XCUITest"
+    opts.browser_name = "Safari"
+    opts.set_capability("safariIgnoreFraudWarning", True)
+    opts.set_capability("pcloudy:options", pcloudy_options)
+    return opts
+
+
+def capture_screenshot(driver, label: str):
+    os.makedirs("screenshots", exist_ok=True)
+    path = os.path.join("screenshots", f"iosweb_{label}.png")
+    driver.save_screenshot(path)
+    print(f"Saved screenshot: {path}")
+
+
+def main():
+    driver = webdriver.Remote(
+        command_executor="https://device.pcloudy.com/appiumcloud/wd/hub",
+        options=build_options(),
+    )
+
+    try:
+        driver.get("https://www.example.com")
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        print("Opened example.com successfully.")
+        capture_screenshot(driver, "example_home")
+
+        driver.get("https://www.wikipedia.org")
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='search']"))
+        )
+        print("Opened Wikipedia successfully.")
+        capture_screenshot(driver, "wikipedia_home")
+
+        search_box = driver.find_element(By.CSS_SELECTOR, "input[name='search']")
+        search_box.send_keys("Appium")
+        search_box.submit()
+
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.ID, "firstHeading"))
+        )
+        print("Wikipedia search completed.")
+        capture_screenshot(driver, "wikipedia_search")
+    finally:
+        driver.quit()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,94 @@
+import os
+import time
+from datetime import datetime
+
+from appium.webdriver import Remote
+from appium.options.android import UiAutomator2Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+
+PCLOUDY_USERNAME = os.getenv("PCLOUDY_USERNAME", "sample_username")
+PCLOUDY_APIKEY = os.getenv("PCLOUDY_APIKEY", "sample_api_key")
+
+
+def build_capabilities():
+    pcloudy_options = {
+        "pCloudy_Username": PCLOUDY_USERNAME,
+        "pCloudy_ApiKey": PCLOUDY_APIKEY,
+        "pCloudy_DeviceFullName": "SAMSUNG_GalaxyA10s_Android_11.0.0_99cde",
+        "pCloudy_WildNet": False,
+        "pCloudy_EnableVideo": True,
+        "pCloudy_EnablePerformanceData": False,
+        "pCloudy_EnableDeviceLogs": False,
+        "appiumVersion": "3.1.1",
+    }
+
+    return {
+        "appium:newCommandTimeout": 600,
+        "appium:launchTimeout": 90000,
+        "appium:platformVersion": "11.0.0",
+        "appium:platformName": "Android",
+        "appium:automationName": "uiautomator2",
+        "appium:appPackage": "com.pcloudy.appiumdemo",
+        "appium:appActivity": "com.ba.mobile.LaunchActivity",
+        "appium:pCloudy_ApplicationName": "pCloudyAppiumDemo.apk",
+        "pcloudy:options": pcloudy_options,
+    }
+
+
+def capture_screenshot(driver, label: str):
+    os.makedirs("screenshots", exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = os.path.join("screenshots", f"android_{label}_{ts}.png")
+    driver.save_screenshot(path)
+    print(f"Saved screenshot: {path}")
+
+
+def wait_for_click(driver, by, value, timeout=20):
+    return WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, value)))
+
+
+def main():
+    options = UiAutomator2Options()
+    for key, value in build_capabilities().items():
+        options.set_capability(key, value)
+
+    driver = Remote(
+        command_executor="https://device.pcloudy.com/appiumcloud/wd/hub",
+        options=options,
+    )
+
+    try:
+        wait_for_click(driver, By.XPATH, "//android.widget.Button[@resource-id='com.pcloudy.appiumdemo:id/accept']").click()
+        capture_screenshot(driver, "accept")
+
+        wait_for_click(driver, By.XPATH, "//android.widget.Button[@resource-id='com.pcloudy.appiumdemo:id/flightButton']").click()
+        capture_screenshot(driver, "flight")
+
+        wait_for_click(driver, By.XPATH, "//android.widget.Spinner[@resource-id='com.pcloudy.appiumdemo:id/spinnerfrom']").click()
+        capture_screenshot(driver, "from_spinner")
+        wait_for_click(driver, By.XPATH, "//android.widget.CheckedTextView[@resource-id='android:id/text1' and @text='Bangalore, India (BLR)']").click()
+        capture_screenshot(driver, "from_selected")
+
+        wait_for_click(driver, By.XPATH, "//android.widget.Spinner[@resource-id='com.pcloudy.appiumdemo:id/spinnerto']").click()
+        capture_screenshot(driver, "to_spinner")
+        wait_for_click(driver, By.XPATH, "//android.widget.CheckedTextView[@resource-id='android:id/text1' and @text='Pune, India (PNQ)']").click()
+        capture_screenshot(driver, "to_selected")
+
+        wait_for_click(driver, By.XPATH, "//android.widget.RadioButton[@resource-id='com.pcloudy.appiumdemo:id/singleTrip']").click()
+        wait_for_click(driver, By.XPATH, "//android.widget.TextView[@resource-id='com.pcloudy.appiumdemo:id/txtdepart']").click()
+        capture_screenshot(driver, "depart")
+        wait_for_click(driver, By.XPATH, "//android.widget.Button[@resource-id='android:id/button1' and @text='OK']").click()
+        capture_screenshot(driver, "depart_confirmed")
+
+        wait_for_click(driver, By.XPATH, "//android.widget.Button[@resource-id='com.pcloudy.appiumdemo:id/searchFlights']").click()
+        capture_screenshot(driver, "search")
+        time.sleep(3)
+    finally:
+        driver.quit()
+
+
+if __name__ == "__main__":
+    main()
